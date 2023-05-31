@@ -2,10 +2,15 @@ import asyncio
 from urllib.parse import urlparse
 import re
 import aiohttp
+from bs4 import BeautifulSoup
+
+from utils.config_init import CHECK_EXTERNAL
 
 
 def create_link(link, base_url):
-    if link.startswith('#') or link.startswith('mailto:') or link.startswith('tel:'):
+    if not link:
+        return
+    if not link or link.startswith('#') or link.startswith('mailto:') or link.startswith('tel:') or link.startswith('skype:'):
         return
 
     parsed_link = urlparse(link)
@@ -16,24 +21,34 @@ def create_link(link, base_url):
         return link
 
 
-async def get_page_links(session, page_url):
+def clear_search(links: set, already_links: set):
+    for link in links:
+        if link in already_links:
+            print(f'REPEAT!!! link {link} is REPEAT!!!')
+
+
+async def get_page_links(session, page_url, already_check):
     if page_url:
         async with session.get(page_url) as response:
             if response.status == 200:
                 html = await response.text()
-                pattern = r"<a\s+(?:[^>]*?\s+)?href=[\"\']([^']*?)[\"\']"
-                links = re.findall(pattern, html)
+                soup = BeautifulSoup(html, 'html.parser')
+                links = [link.get("href") for link in soup.find_all('a')]
                 print(f"parser ok {page_url} find {len(links)} links")
+                already_check.add(page_url)
                 return links
 
     return []
 
 
-async def check_link(session, link, base_url, valid_links, error_links, timeout_err_links, search_links):
-    if not link:
+async def check_link(session, link, base_url, valid_links, error_links, timeout_err_links, search_links, already_check):
+    parsed_link = urlparse(link)
+    if not CHECK_EXTERNAL and parsed_link.netloc != base_url.netloc:
         return
 
-    parsed_link = urlparse(link)
+    if not link or link in valid_links or link in error_links or link in timeout_err_links:
+        return
+
     try:
         async with session.head(link) as response:
             if response.status == 200:
@@ -56,7 +71,7 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
         timeout_err_links.add(link)
         print(f"Timeout Error with links {link}")
     except Exception as e:
-        print(f"Unexpected Error with links {link}", e)
+        print(f"Unexpected Error with link: {link}", e)
 
 
 async def check_links_on_site(site_url, t):
@@ -65,25 +80,36 @@ async def check_links_on_site(site_url, t):
         base_url = urlparse(site_url)
         valid_links = set()
         error_links = set()
-        search_links = set()
         timeout_err_links = set()
-        page_links = await get_page_links(session, site_url)
+
+        search_links = set()
+        already_check = set()
+
+        page_links = await get_page_links(session, site_url, already_check)
         print(page_links)
         await asyncio.gather(
-            *[check_link(session, create_link(link, base_url), base_url, valid_links, error_links, timeout_err_links, search_links)
+            *[check_link(session,
+                         create_link(link, base_url),
+                         base_url,
+                         valid_links,
+                         error_links,
+                         timeout_err_links,
+                         search_links,
+                         already_check)
               for link in page_links])
 
         while search_links:
             link = search_links.pop()
             print("search links: ", len(search_links))
             print("check_link: ", link)
-
+            clear_search(search_links, already_check)
             link = create_link(link, base_url)
             if link:
-                new_links = await get_page_links(session, link)
+                new_links = await get_page_links(session, link, already_check)
                 await asyncio.gather(
-                    *[check_link(session, create_link(new_link, base_url), base_url, valid_links, error_links, timeout_err_links, search_links)
-                      for new_link in new_links if create_link(new_link, base_url) not in valid_links and create_link(new_link, base_url) not in error_links and create_link(new_link, base_url) not in timeout_err_links])
+                    *[check_link(session, create_link(new_link, base_url), base_url, valid_links, error_links,
+                                 timeout_err_links, search_links, already_check)
+                      for new_link in new_links])
 
         return valid_links, error_links, timeout_err_links
 

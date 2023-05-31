@@ -10,3 +10,5 @@ site_url =
 sender_mail =
 sender_mail_password =
 receiver_email =
+email_port =
+email_host =
