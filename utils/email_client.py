@@ -20,7 +20,7 @@ def send_mail(text):
     msg['From'] = SENDER_MAIL
     msg['To'] = RECEIVER_MAIL
 
-    msg.attach(MIMEText(message, 'plain'))
+    msg.attach(MIMEText(message, 'html'))
     try:
         # Establish a secure connection with the SMTP server
         with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT) as server:

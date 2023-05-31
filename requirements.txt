@@ -17,3 +17,6 @@ six==1.16.0
 soupsieve==2.4.1
 tzdata==2023.3
 yarl==1.9.2
+
+prettytable~=3.7.0
+Jinja2~=3.1.2

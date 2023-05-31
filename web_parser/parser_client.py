@@ -1,16 +1,20 @@
 import asyncio
 from urllib.parse import urlparse
-import re
 import aiohttp
 from bs4 import BeautifulSoup
 
-from utils.config_init import CHECK_EXTERNAL
+from utils.config_init import CHECK_EXTERNAL, TIMEOUT
 
 
 def create_link(link, base_url):
     if not link:
         return
-    if not link or link.startswith('#') or link.startswith('mailto:') or link.startswith('tel:') or link.startswith('skype:'):
+
+    if not link or link.startswith('#')\
+            or link.startswith('mailto:') \
+            or link.startswith('tel:') \
+            or link.startswith('skype:') \
+            or link.startswith('javascript:'):
         return
 
     parsed_link = urlparse(link)
@@ -21,13 +25,7 @@ def create_link(link, base_url):
         return link
 
 
-def clear_search(links: set, already_links: set):
-    for link in links:
-        if link in already_links:
-            print(f'REPEAT!!! link {link} is REPEAT!!!')
-
-
-async def get_page_links(session, page_url, already_check):
+async def get_page_links(session, page_url):
     if page_url:
         async with session.get(page_url) as response:
             if response.status == 200:
@@ -35,13 +33,12 @@ async def get_page_links(session, page_url, already_check):
                 soup = BeautifulSoup(html, 'html.parser')
                 links = [link.get("href") for link in soup.find_all('a')]
                 print(f"parser ok {page_url} find {len(links)} links")
-                already_check.add(page_url)
                 return links
 
     return []
 
 
-async def check_link(session, link, base_url, valid_links, error_links, timeout_err_links, search_links, already_check):
+async def check_link(session, link, base_url, valid_links, error_links, timeout_err_links, search_links, parent_link):
     parsed_link = urlparse(link)
     if not CHECK_EXTERNAL and parsed_link.netloc != base_url.netloc:
         return
@@ -62,10 +59,10 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
                     print(f'Link {link} cod: {response.status}')
             elif response.status == 404:
                 print(f'Link {link} cod: {response.status}')
-                error_links.add(link)
+                error_links[link] = {'parent': parent_link, 'status_cod': response.status}
 
     except aiohttp.client_exceptions.InvalidURL as err:
-        error_links.add(link)
+        error_links[link] = {'parent': parent_link, 'status_cod': response.status}
         print("Invalid URL:", err)
     except asyncio.TimeoutError:
         timeout_err_links.add(link)
@@ -74,18 +71,17 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
         print(f"Unexpected Error with link: {link}", e)
 
 
-async def check_links_on_site(site_url, t):
-    timeout = aiohttp.ClientTimeout(total=t)
+async def check_links_on_site(site_url):
+    timeout = aiohttp.ClientTimeout(total=int(TIMEOUT))
     async with aiohttp.ClientSession(timeout=timeout) as session:
         base_url = urlparse(site_url)
         valid_links = set()
-        error_links = set()
+        error_links = dict()
         timeout_err_links = set()
 
         search_links = set()
-        already_check = set()
 
-        page_links = await get_page_links(session, site_url, already_check)
+        page_links = await get_page_links(session, site_url)
         print(page_links)
         await asyncio.gather(
             *[check_link(session,
@@ -95,27 +91,26 @@ async def check_links_on_site(site_url, t):
                          error_links,
                          timeout_err_links,
                          search_links,
-                         already_check)
+                         site_url)
               for link in page_links])
 
         while search_links:
             link = search_links.pop()
             print("search links: ", len(search_links))
             print("check_link: ", link)
-            clear_search(search_links, already_check)
             link = create_link(link, base_url)
             if link:
-                new_links = await get_page_links(session, link, already_check)
+                new_links = await get_page_links(session, link)
                 await asyncio.gather(
                     *[check_link(session, create_link(new_link, base_url), base_url, valid_links, error_links,
-                                 timeout_err_links, search_links, already_check)
+                                 timeout_err_links, search_links, link)
                       for new_link in new_links])
 
         return valid_links, error_links, timeout_err_links
 
 
-async def start_parsing(url, timeout):
+async def start_parsing(url):
     site_url = url
-    valid_links, error_links, timeout_err_links = await check_links_on_site(site_url, timeout)
+    valid_links, error_links, timeout_err_links = await check_links_on_site(site_url)
 
     return valid_links, error_links, timeout_err_links
