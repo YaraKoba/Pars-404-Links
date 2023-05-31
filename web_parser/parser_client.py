@@ -37,7 +37,6 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
     try:
         async with session.head(link) as response:
             if response.status == 200:
-                print(response.headers.get('Content-Type'))
                 if parsed_link.netloc == base_url.netloc:
                     print(f'Link {link} cod: {response.status}')
                     if link not in valid_links and response.headers.get('Content-Type') == "text/html; charset=UTF-8":
@@ -77,7 +76,6 @@ async def check_links_on_site(site_url, t):
         while search_links:
             link = search_links.pop()
             print("search links: ", len(search_links))
-            print(search_links)
             print("check_link: ", link)
 
             link = create_link(link, base_url)
@@ -92,9 +90,6 @@ async def check_links_on_site(site_url, t):
 
 async def start_parsing(url, timeout):
     site_url = url
-
     valid_links, error_links, timeout_err_links = await check_links_on_site(site_url, timeout)
-
-
 
     return valid_links, error_links, timeout_err_links
