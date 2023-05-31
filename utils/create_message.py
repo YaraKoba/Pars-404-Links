@@ -4,6 +4,7 @@ import prettytable as pt
 import pandas as pd
 from jinja2 import Template
 
+
 def create_table(header: list, body: List):
     table_meteo = pt.PrettyTable(header)
     table_meteo.align = 'c'
@@ -76,6 +77,7 @@ def create_html_template(err_links):
     # Заполнение шаблона данными
     html_output = template.render(data=data)
     return html_output
+
 
 def get_mess(err_links: dict):
     header = ['link', 'status', 'parent']

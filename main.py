@@ -10,9 +10,7 @@ import json
 async def main():
     site_url = SITE_URL_PARSER if SITE_URL_PARSER else SITE_URL_CONFIG
     print('start check for', site_url)
-    valid_links, error_links, timeout_err_links = [], {}, []# await parser_client.start_parsing(site_url)
-    with open('test.json', 'r') as f:
-        error_links = json.load(f)
+    valid_links, error_links, timeout_err_links = await parser_client.start_parsing(site_url)
 
     if DEBUG:
         message = create_pandas(error_links)
