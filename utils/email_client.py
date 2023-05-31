@@ -4,7 +4,7 @@ import smtplib
 import ssl
 
 
-def send_mail(mail, password, text):
+def send_mail(sender_mail, sender_password, receiver_email, text):
     context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
     context.set_ciphers('HIGH:!DH:!aNULL')
@@ -15,18 +15,18 @@ def send_mail(mail, password, text):
 
     msg = MIMEMultipart()
     msg['Subject'] = subject
-    msg['From'] = mail
-    msg['To'] = mail
+    msg['From'] = sender_mail
+    msg['To'] = receiver_email
 
     msg.attach(MIMEText(message, 'plain'))
     try:
         # Establish a secure connection with the SMTP server
-        with smtplib.SMTP_SSL('smtp.gmail.com', 587) as server:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             # Login to the SMTP server
-            server.login(mail, password)
+            server.login(sender_mail, sender_password)
 
             # Send the email
             server.send_message(msg)
-        print("Email sent successfully!")
+        print(f"Email sent successfully to {receiver_email}!")
     except smtplib.SMTPException as e:
         print("Failed to send email. Error:", str(e))

@@ -10,8 +10,9 @@ def load_config():
 config = load_config()
 
 NOTIFY = config.getboolean('Settings', 'notify', fallback=False)
-NOTIFY_MAIL = config.get('Settings', 'notify_mail', fallback='')
-NOTIFY_MAIL_PASSWORD = config.get('Settings', 'notify_mail_password', fallback='')
+SENDER_MAIL = config.get('Mail', 'sender_mail', fallback='')
+SENDER_MAIL_PASSWORD = config.get('Mail', 'sender_mail_password', fallback='')
+RECEIVER_MAIL = config.get('Mail', 'receiver_email', fallback='')
 
 DEBUG = config.getboolean('Settings', 'debug', fallback=False)
 TIMEOUT = config.get('Settings', 'timeout', fallback=10)
