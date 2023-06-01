@@ -2,7 +2,7 @@ import asyncio
 from urllib.parse import urlparse
 import aiohttp
 from bs4 import BeautifulSoup
-
+from fake_useragent import UserAgent
 from utils.config_init import CHECK_EXTERNAL, TIMEOUT
 
 
@@ -10,11 +10,7 @@ def create_link(link, base_url):
     if not link:
         return
 
-    if not link or link.startswith('#')\
-            or link.startswith('mailto:') \
-            or link.startswith('tel:') \
-            or link.startswith('skype:') \
-            or link.startswith('javascript:'):
+    if not link or any(link.startswith(prefix) for prefix in ['#', 'mailto:', 'tel:', 'skype:', 'javascript:']):
         return
 
     parsed_link = urlparse(link)
@@ -23,6 +19,21 @@ def create_link(link, base_url):
         return link
     else:
         return link
+
+
+def get_user_agent():
+    ua = UserAgent()
+    user_agent = ua.random
+    header = {'User-Agent': user_agent}
+    return header
+
+
+def clear_timeout(timeout_err_links: set, valid_links, error_links):
+    clone_timeout = timeout_err_links.copy()
+    for link in clone_timeout:
+        if (link in valid_links or link in error_links) and link in timeout_err_links:
+            print(f'REMOVE {link} timeout')
+            timeout_err_links.remove(link)
 
 
 async def get_page_links(session, page_url):
@@ -43,11 +54,12 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
     if not CHECK_EXTERNAL and parsed_link.netloc != base_url.netloc:
         return
 
-    if not link or link in valid_links or link in error_links or link in timeout_err_links:
+    if not link or link in valid_links or link in error_links:
         return
 
     try:
-        async with session.head(link) as response:
+        headers = get_user_agent()
+        async with session.head(link, headers=headers) as response:
             if response.status == 200:
                 if parsed_link.netloc == base_url.netloc:
                     print(f'Link {link} cod: {response.status}')
@@ -69,6 +81,20 @@ async def check_link(session, link, base_url, valid_links, error_links, timeout_
         print(f"Timeout Error with links {link}")
     except Exception as e:
         print(f"Unexpected Error with link: {link}", e)
+
+
+async def main_loop(session, search_links, base_url, valid_links, error_links, timeout_err_links):
+    while search_links:
+        link = search_links.pop()
+        print("search links: ", len(search_links))
+        print("check_link: ", link)
+        link = create_link(link, base_url)
+        if link:
+            new_links = await get_page_links(session, link)
+            await asyncio.gather(
+                *[check_link(session, create_link(new_link, base_url), base_url, valid_links, error_links,
+                             timeout_err_links, search_links, link)
+                  for new_link in new_links])
 
 
 async def check_links_on_site(site_url):
@@ -94,17 +120,15 @@ async def check_links_on_site(site_url):
                          site_url)
               for link in page_links])
 
-        while search_links:
-            link = search_links.pop()
-            print("search links: ", len(search_links))
-            print("check_link: ", link)
-            link = create_link(link, base_url)
-            if link:
-                new_links = await get_page_links(session, link)
-                await asyncio.gather(
-                    *[check_link(session, create_link(new_link, base_url), base_url, valid_links, error_links,
-                                 timeout_err_links, search_links, link)
-                      for new_link in new_links])
+        await main_loop(session, search_links, base_url, valid_links, error_links, timeout_err_links)
+        if timeout_err_links:
+            print(f'START TIMEOUT {len(timeout_err_links)} links')
+            for link in timeout_err_links:
+                await check_link(session, link, base_url, valid_links, error_links, timeout_err_links, search_links,
+                                 link)
+            clear_timeout(timeout_err_links, valid_links, error_links)
+            print(len(search_links), len(timeout_err_links))
+            await main_loop(session, search_links, base_url, valid_links, error_links, timeout_err_links)
 
         return valid_links, error_links, timeout_err_links
 
