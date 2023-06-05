@@ -3,6 +3,7 @@ import json
 import prettytable as pt
 import pandas as pd
 from jinja2 import Template
+from datetime import datetime
 
 
 def create_table(header: list, body: List):
@@ -22,6 +23,7 @@ def create_pandas(body: dict):
         data['status'].append(str(body[link]['status_cod']))
         data['parent'].append(body[link]['parent'])
     pd.options.display.max_colwidth = 200
+    pd.options.display.max_rows = 1000
     pd.options.display.max_columns = 3
     pd.set_option("expand_frame_repr", False)
     df = pd.DataFrame(data=data)
@@ -54,14 +56,14 @@ def create_html_template(err_links):
         <table>
             <tr>
                 <th>link</th>
-                <th>Parent</th>
                 <th>Status cod</th>
+                <th>Parent</th>
             </tr>
             {% for link, info in data.items() %}
             <tr>
                 <td><a href="{{ link }}">{{ link }}</a></td>
-                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>
                 <td>{{ info.status_cod }}</td>
+                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>   
             </tr>
             {% endfor %}
         </table>
@@ -93,10 +95,14 @@ if __name__ == "__main__":
         'link3': {'status_cod': 404, 'parent': 'parent3'},
     }
 
-    with open('../test.json', 'r') as f:
-        err_link = json.load(f)
+    # with open('../test.json', 'r') as f:
+    #     err_link = json.load(f)
+    start = datetime.now()
     print(err_link)
     message = create_pandas(err_link)
     print(message)
     with open('../result_files/error_links.txt', 'w') as f:
         f.write(str(message))
+    end = datetime.now()
+    time = end - start
+    print(str(time)[2:][:-7])
