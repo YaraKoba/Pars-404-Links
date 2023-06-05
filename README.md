@@ -11,10 +11,11 @@ Change `config.ini`
 
 ```
 [Settings]
-debug = 1 / 0 (result addes in file or not)
+debug = 1 / 0 (result addes in file and in consol or not)
 notify = 1 / 0 (send result on mail or not)
 check_external = 1 / 0 (check external links or not)
 timeout = sec (timeout to check links)
+workers = number (number of asynchronous processes for parsing)
 
 [input]
 site_url = https://your_link_to_check.com

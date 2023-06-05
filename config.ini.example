@@ -3,6 +3,7 @@ debug = 1
 notify = 1
 check_external = 1
 timeout = 10
+workers = 10
 
 [input]
 site_url =

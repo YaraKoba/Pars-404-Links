@@ -20,7 +20,7 @@ def create_pandas(body: dict):
     data = {'link': [], 'status': [], 'parent': []}
     for link in body:
         data['link'].append(link)
-        data['status'].append(str(body[link]['status_cod']))
+        data['status'].append(str(body[link]['status_code']))
         data['parent'].append(body[link]['parent'])
     pd.options.display.max_colwidth = 200
     pd.options.display.max_rows = 1000
@@ -51,16 +51,16 @@ def create_html_template(err_404, timeout_err, any_err):
 
 def get_mess(err_links: dict):
     header = ['link', 'status', 'parent']
-    rows = [[link, err_links[link]['status_cod'], err_links[link]['parent']] for link in err_links]
+    rows = [[link, err_links[link]['status_code'], err_links[link]['parent']] for link in err_links]
     table = create_table(header, rows)
     return table
 
 
 if __name__ == "__main__":
     err_link = {
-        'link1': {'status_cod': 404, 'parent': 'parent1'},
-        'link2': {'status_cod': 404, 'parent': 'parent2'},
-        'link3': {'status_cod': 404, 'parent': 'parent3'},
+        'link1': {'status_code': 404, 'parent': 'parent1'},
+        'link2': {'status_code': 404, 'parent': 'parent2'},
+        'link3': {'status_code': 404, 'parent': 'parent3'},
     }
 
     # with open('../test.json', 'r') as f:

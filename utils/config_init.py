@@ -11,8 +11,9 @@ config = load_config()
 
 NOTIFY = config.getboolean('Settings', 'notify', fallback=False)
 DEBUG = config.getboolean('Settings', 'debug', fallback=False)
-TIMEOUT = config.get('Settings', 'timeout', fallback=10)
+TIMEOUT = int(config.get('Settings', 'timeout', fallback=10))
 CHECK_EXTERNAL = config.getboolean('Settings', 'check_external', fallback=True)
+WORKERS = int(config.get('Settings', 'workers', fallback=10))
 
 SITE_URL_CONFIG = config.get('input', 'site_url', fallback='')
 
