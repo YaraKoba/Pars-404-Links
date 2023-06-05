@@ -28,7 +28,7 @@ def send_mail(text):
             server.login(SENDER_MAIL, SENDER_MAIL_PASSWORD)
 
             # Send the email
-            server.send_message(msg)
+            print(server.send_message(msg))
         print(f"Email sent successfully to {RECEIVER_MAIL}!")
     except smtplib.SMTPException as e:
         print("Failed to send email. Error:", str(e))

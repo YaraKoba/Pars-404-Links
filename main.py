@@ -13,40 +13,46 @@ async def main():
     parser = ParserClient(site_url)
 
     start = datetime.now()
-    valid_links, error_links, timeout_err_links = await parser.start_parsing()
+    valid_links, error_links, timeout_err_links, any_error = await parser.start_parsing()
     end = datetime.now()
-    time = end - start
-
 
     if DEBUG:
-        message_err = create_pandas(error_links)
+        message_404_err = create_pandas(error_links)
         message_time = create_pandas(timeout_err_links)
+        message_any_err = create_pandas(any_error)
 
         with open('result_files/valid_links.txt', 'w') as f:
             f.write('\n'.join(valid_links))
 
         with open('result_files/error_links.txt', 'w') as f:
             if error_links:
-                print('\nERROR links:')
-                print(message_err)
-            f.write(str(message_err))
+                print('\n----- ERROR 404 links:')
+                print(message_404_err)
+            f.write(str(message_404_err))
 
         with open('result_files/timeout_err_links.txt', 'w') as f:
             if timeout_err_links:
-                print("\nTimeERROR links:")
+                print("\n----- TimeERROR links:")
                 print(message_time)
             f.write('\n'.join(message_time))
 
+        with open('result_files/any_errors.txt', 'w') as f:
+            if timeout_err_links:
+                print("\n----- AnyERROR links:")
+                print(message_any_err)
+            f.write('\n'.join(message_any_err))
+
     if NOTIFY and error_links:
-        message = create_html_template(error_links)
+        message = create_html_template(error_links, timeout_err_links, any_error)
         send_mail(text=message)
 
-    v, e, t = len(valid_links), len(error_links), len(timeout_err_links)
-    print(f'\nParser end successful time - "{str(time)[2:][:-7]}"\n'
-          f'links: {v+e+t}\n'
+    v, e, t, a = len(valid_links), len(error_links), len(timeout_err_links), len(any_error)
+    print(f'\nParser end successful time - "{str(end - start)[2:][:-7]}"\n'
+          f'links: {v+e+t+a}\n'
           f'Valid links: {v}\n'
           f'Error links: {e}\n'
-          f'Timeout links: {t}')
+          f'Timeout links: {t}\n'
+          f'AnyErr links: {a}')
 
 if __name__ == '__main__':
     asyncio.run(main())

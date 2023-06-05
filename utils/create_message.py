@@ -30,55 +30,23 @@ def create_pandas(body: dict):
     return df
 
 
-def create_html_template(err_links):
-    html_template = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            table {
-                border-collapse: collapse;
-                width: 100%;
-            }
+def create_html_template(err_404, timeout_err, any_err):
+    with open('template/mail_template.html') as html_f:
+        html_template = html_f.read()
 
-            th, td {
-                padding: 8px;
-                text-align: left;
-                border-bottom: 1px solid #ddd;
-            }
+        # Словарь данных
+        data_404 = err_404
+        data_timeout = timeout_err
+        data_any = any_err
+        # Создание объекта шаблона
+        template = Template(html_template)
 
-            th {
-                background-color: #f2f2f2;
-            }
-        </style>
-    </head>
-    <body>
-        <table>
-            <tr>
-                <th>link</th>
-                <th>Status cod</th>
-                <th>Parent</th>
-            </tr>
-            {% for link, info in data.items() %}
-            <tr>
-                <td><a href="{{ link }}">{{ link }}</a></td>
-                <td>{{ info.status_cod }}</td>
-                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>   
-            </tr>
-            {% endfor %}
-        </table>
-    </body>
-    </html>
-    """
+        # Заполнение шаблона данными
+        html_output = template.render(data_404=data_404, data_timeout=data_timeout, data_any=data_any)
+        with open('template/test.html', 'w') as f:
+            f.write(html_output)
 
-    # Словарь данных
-    data = err_links
-    # Создание объекта шаблона
-    template = Template(html_template)
-
-    # Заполнение шаблона данными
-    html_output = template.render(data=data)
-    return html_output
+        return html_output
 
 
 def get_mess(err_links: dict):

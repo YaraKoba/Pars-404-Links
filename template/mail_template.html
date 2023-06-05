@@ -1,0 +1,72 @@
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #f2f2f2;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>404 Error</h2>
+        <table>
+            <tr>
+                <th>link</th>
+                <th>Status cod</th>
+                <th>Parent</th>
+            </tr>
+            {% for link, info in data_404.items() %}
+            <tr>
+                <td><a href="{{ link }}">{{ link }}</a></td>
+                <td>{{ info.status_cod }}</td>
+                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% if data_timeout %}
+        <h2>Timeout Error</h2>
+        <table>
+            <tr>
+                <th>link</th>
+                <th>Status cod</th>
+                <th>Parent</th>
+            </tr>
+            {% for link, info in data_timeout.items() %}
+            <tr>
+                <td><a href="{{ link }}">{{ link }}</a></td>
+                <td>{{ info.status_cod }}</td>
+                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        {% if data_any %}
+        <h2>Any Error</h2>
+        <table>
+            <tr>
+                <th>link</th>
+                <th>description</th>
+                <th>Parent</th>
+            </tr>
+            {% for link, info in data_any.items() %}
+            <tr>
+                <td><a href="{{ link }}">{{ link }}</a></td>
+                <td>{{ info.status_cod }}</td>
+                <td><a href="{{ info.parent }}">{{ info.parent }}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </body>
+    </html>
