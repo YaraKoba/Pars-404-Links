@@ -28,7 +28,7 @@ email_port = 465 (for example)
 email_host = smtp.gmail.com (for example)
 ```
 
-### Start paesing
+### Start parsing
 If in `config.ini`
 ```
 [input]
