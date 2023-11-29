@@ -1,3 +1,4 @@
+import re
 import asyncio
 from urllib.parse import urlparse
 import aiohttp
@@ -88,6 +89,7 @@ class ParserClient:
 
     async def check_link(self, session, link, parent_link):
         parsed_link = urlparse(link)
+        link_path = parsed_link.path
         base_url = self.base_url
 
         if not link:
@@ -97,7 +99,7 @@ class ParserClient:
             print(f'Link {link} is external, change config')
             return
 
-        if link in self.valid_links:
+        if link_path in self.valid_links:
             return
 
         try:
@@ -108,9 +110,9 @@ class ParserClient:
                         print(f'Link {link} code: {response.status}')
                         if link not in self.valid_links and "text/html" in response.headers.get('Content-Type'):
                             await self.q.put(link)
-                        self.valid_links.add(link)
+                        self.valid_links.add(link_path)
                     else:
-                        self.valid_links.add(link)
+                        self.valid_links.add(link_path)
                         print(f'Link {link} code: {response.status}')
                 else:
                     print(f'Link {link} code: {response.status}')
